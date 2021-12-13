@@ -118,9 +118,9 @@ class Stripe {
   }
 
   /// Creates a single-use token that represents an Apple Pay credit card’s details.
-  /// 
-  /// The [payment] param should be the data response from the `pay` plugin. It can 
-  /// be used both with the callback `onPaymentResult` from `pay.ApplePayButton` or 
+  ///
+  /// The [payment] param should be the data response from the `pay` plugin. It can
+  /// be used both with the callback `onPaymentResult` from `pay.ApplePayButton` or
   /// directly with `Pay.showPaymentSelector`
   ///
   /// Throws an [StripeError] in case createApplePayToken fails.
@@ -342,26 +342,6 @@ class Stripe {
   /// details: https://stripe.com/docs/security/guide#validating-pci-compliance
   Future<void> dangerouslyUpdateCardDetails(CardDetails card) async {
     return await _platform.dangerouslyUpdateCardDetails(card);
-  }
-
-  /// Inititialise google pay
-  Future<void> initGooglePay(GooglePayInitParams params) async {
-    return await _platform.initGooglePay(params);
-  }
-
-  /// Setup google pay.
-  ///
-  /// Throws a [StripeException] in case it is failing
-  Future<void> presentGooglePay(PresentGooglePayParams params) async {
-    return await _platform.presentGooglePay(params);
-  }
-
-  /// Create a payment method for google pay.
-  ///
-  /// Throws a [StripeException] in case it is failing
-  Future<PaymentMethod> createGooglePayPaymentMethod(
-      CreateGooglePayPaymentParams params) async {
-    return await _platform.createGooglePayPaymentMethod(params);
   }
 
   FutureOr<void> _awaitForSettings() {
