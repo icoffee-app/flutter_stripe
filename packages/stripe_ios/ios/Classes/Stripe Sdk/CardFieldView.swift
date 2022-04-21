@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import Stripe
 
-public class CardFieldView: UIView, STPPaymentCardTextFieldDelegate {
+class CardFieldView: UIView, STPPaymentCardTextFieldDelegate {
     @objc var onCardChange: RCTDirectEventBlock?
     @objc var onFocusChange: RCTDirectEventBlock?
     @objc var dangerouslyGetFullCardDetails: Bool = false
@@ -40,7 +40,7 @@ public class CardFieldView: UIView, STPPaymentCardTextFieldDelegate {
     @objc var autofocus: Bool = false {
         didSet {
             if autofocus == true {
-                cardField.becomeFirstResponder()
+                cardField.reactFocus()
             }
         }
     }
@@ -104,44 +104,47 @@ public class CardFieldView: UIView, STPPaymentCardTextFieldDelegate {
         cardField.clear()
     }
     
-    public func paymentCardTextFieldDidEndEditing(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidEndEditing(_ textField: STPPaymentCardTextField) {
         onFocusChange?(["focusedField": NSNull()])
     }
     
-    public func paymentCardTextFieldDidBeginEditingNumber(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidBeginEditingNumber(_ textField: STPPaymentCardTextField) {
         onFocusChange?(["focusedField": "CardNumber"])
     }
     
-    public func paymentCardTextFieldDidBeginEditingCVC(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidBeginEditingCVC(_ textField: STPPaymentCardTextField) {
         onFocusChange?(["focusedField": "Cvc"])
     }
     
-    public func paymentCardTextFieldDidBeginEditingExpiration(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidBeginEditingExpiration(_ textField: STPPaymentCardTextField) {
         onFocusChange?(["focusedField": "ExpiryDate"])
     }
     
-    public func paymentCardTextFieldDidBeginEditingPostalCode(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidBeginEditingPostalCode(_ textField: STPPaymentCardTextField) {
         onFocusChange?(["focusedField": "PostalCode"])
     }
     
-   
-    
-    public func paymentCardTextFieldDidChange(_ textField: STPPaymentCardTextField) {
+    func paymentCardTextFieldDidChange(_ textField: STPPaymentCardTextField) {
         if onCardChange != nil {
             let brand = STPCardValidator.brand(forNumber: textField.cardParams.number ?? "")
+            let validExpiryDate = STPCardValidator.validationState(forExpirationYear: textField.cardParams.expYear?.stringValue ?? "", inMonth: textField.cardParams.expMonth?.stringValue ?? "")
+            let validCVC = STPCardValidator.validationState(forCVC: textField.cardParams.cvc ?? "", cardBrand: brand)
+            let validNumber = STPCardValidator.validationState(forNumber: textField.cardParams.number ?? "", validatingCardBrand: true)
             var cardData: [String: Any?] = [
                 "expiryMonth": textField.cardParams.expMonth ?? NSNull(),
                 "expiryYear": textField.cardParams.expYear ?? NSNull(),
                 "complete": textField.isValid,
                 "brand": Mappers.mapCardBrand(brand) ?? NSNull(),
-                "last4": textField.cardParams.last4 ?? ""
+                "last4": textField.cardParams.last4 ?? "",
+                "validExpiryDate": Mappers.mapFromCardValidationState(state: validExpiryDate),
+                "validCVC": Mappers.mapFromCardValidationState(state: validCVC),
+                "validNumber": Mappers.mapFromCardValidationState(state: validNumber)
             ]
             if (cardField.postalCodeEntryEnabled) {
                 cardData["postalCode"] = textField.postalCode ?? ""
             }
             if (dangerouslyGetFullCardDetails) {
                 cardData["number"] = textField.cardParams.number ?? ""
-                cardData["cvc"] = textField.cardParams.cvc ?? ""
             }
             onCardChange!(cardData as [AnyHashable : Any])
         }
@@ -154,7 +157,7 @@ public class CardFieldView: UIView, STPPaymentCardTextFieldDelegate {
         }
     }
     
-    public override func layoutSubviews() {
+    override func layoutSubviews() {
         cardField.frame = self.bounds
     }
     

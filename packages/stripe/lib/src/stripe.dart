@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:stripe_platform_interface/stripe_platform_interface.dart';
 
 /// [Stripe] is the facade of the library and exposes the operations that can be
@@ -181,6 +180,11 @@ class Stripe {
     } on StripeError catch (error) {
       throw StripeError(message: error.message, code: error.message);
     }
+  }
+
+  /// Opens the UI to set up credit cards for Apple Pay.
+  Future<void> openApplePaySetup() async {
+    await _platform.openApplePaySetup();
   }
 
   /// Presents an Apple payment sheet using [params] for additional
@@ -377,6 +381,9 @@ class Stripe {
   bool _needsSettings = true;
   void markNeedsSettings() {
     _needsSettings = true;
+    if (!_platform.updateSettingsLazily) {
+      _awaitForSettings();
+    }
   }
 
   Future<void> _initialise({
@@ -397,4 +404,7 @@ class Stripe {
   }
 
   ValueNotifier<bool>? _isApplePaySupported;
+
+  // Internal use only
+  static late final buildWebCard = _platform.buildCard;
 }
