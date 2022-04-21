@@ -25,11 +25,14 @@ class MethodChannelStripe extends StripePlatform {
   MethodChannelStripe({
     required MethodChannel methodChannel,
     required bool platformIsIos,
+    required bool platformIsAndroid,
   })  : _methodChannel = methodChannel,
+        _platformIsAndroid = platformIsAndroid,
         _platformIsIos = platformIsIos;
 
   final MethodChannel _methodChannel;
   final bool _platformIsIos;
+  final bool _platformIsAndroid;
 
   @override
   Future<void> initialise({
@@ -142,6 +145,14 @@ class MethodChannelStripe extends StripePlatform {
   }
 
   @override
+  Future<void> openApplePaySetup() async {
+    if (!_platformIsIos) {
+      throw UnsupportedError('Apple Pay is only available for iOS devices');
+    }
+    await _methodChannel.invokeMethod('openApplePaySetup');
+  }
+
+  @override
   Future<void> presentApplePay(ApplePayPresentParams params) async {
     if (!_platformIsIos) {
       throw UnsupportedError('Apple Pay is only available for iOS devices');
@@ -199,8 +210,14 @@ class MethodChannelStripe extends StripePlatform {
 
   @override
   Future<TokenData> createToken(CreateTokenParams params) async {
+    final invokeParams = params.map(
+      (value) => value.toJson(),
+      card: (data) => data.toJson()['params'],
+      bankAccount: (data) => data.toJson()['params'],
+    );
+
     final result = await _methodChannel.invokeMapMethod<String, dynamic>(
-        'createToken', {'params': params.toJson()});
+        'createToken', {'params': invokeParams});
 
     return ResultParser<TokenData>(
             parseJson: (json) => TokenData.fromJson(json))
@@ -254,9 +271,11 @@ class MethodChannelStripeFactory {
   const MethodChannelStripeFactory();
 
   StripePlatform create() => MethodChannelStripe(
-      methodChannel: const MethodChannel(
-        'flutter.stripe/payments',
-        JSONMethodCodec(),
-      ),
-      platformIsIos: Platform.isIOS);
+        methodChannel: const MethodChannel(
+          'flutter.stripe/payments',
+          JSONMethodCodec(),
+        ),
+        platformIsIos: Platform.isIOS,
+        platformIsAndroid: Platform.isAndroid,
+      );
 }
